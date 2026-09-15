@@ -1,0 +1,98 @@
+
+========================================================================
+PART A - RELIABILITY METRICS
+========================================================================
+Number of failure events     : 12
+Total downtime               : 27 h  (2 + 4 + 1 + 2 + 4 + 1 + 2 + 2 + 5 + 2 + 1 + 1)
+Total uptime                 : 720 - 27 = 693 h
+Availability                 : 693/720 = 0.9625 = 96.25 %
+MTTF = uptime / failures     : 693/12 = 57.75 h
+MTTR = downtime / failures   : 27/12 = 2.25 h
+MTBF = period / failures     : 720/12 = 60.00 h (check: MTTF + MTTR = 60.00 h)
+Availability check A = MTTF/(MTTF+MTTR) = 0.9625
+
+Per-component breakdown:
+Component              Failures  Downtime(h)   Share  MTTR(h)
+Primary Database              3           13   48.1%     4.33
+Application Server A          3            5   18.5%     1.67
+Application Server B          2            4   14.8%     2.00
+Campus Network                2            3   11.1%     1.50
+Load Balancer                 2            2    7.4%     1.00
+
+Observed up-intervals between failures (h): [38, 51, 48, 57, 84, 65, 54, 65, 49, 67, 51, 34]
+Mean of observed up-intervals: 55.25 h (last interval 30 h is right-censored, not included)
+
+[Additional view] If redundancy masks A/B and DB failures, only SPOF events (LB + Network) cause user-visible outage:
+  SPOF downtime = 5 h  ->  service availability = 0.9931 = 99.31 %
+
+========================================================================
+PART B - RELIABILITY BLOCK DIAGRAM
+========================================================================
+Application (A OR B, parallel): 1 - (1-0.97)(1-0.97) = 1 - 0.000900 = 0.999100
+Database (Primary OR Standby) : 1 - (1-0.98)(1-0.99) = 1 - 0.000200 = 0.999800
+Load Balancer (single)        : 0.995
+Campus Network (single)       : 0.995
+Overall (series)              : 0.995 x 0.999100 x 0.999800 x 0.995 = 0.988936
+System unreliability          : 0.011064
+Contribution of each subsystem to unreliability (1 - R_i):
+  Load Balancer            0.005000
+  Campus Network           0.005000
+  Application subsystem    0.000900
+  Database subsystem       0.000200
+What-if (no redundancy, A + Primary only): 0.941118
+What-if (redundant LB and dual network uplink): 0.998850
+
+========================================================================
+PART C - FMEA (RPN = S x O x D)
+========================================================================
+ # Component              Failure mode                                      S  O  D  RPN
+ 1 Load Balancer          Node crash / hardware or process failure         10  3  3   90
+ 2 Load Balancer          Misrouting / faulty health check marks healthy s  6  3  6  108
+ 3 Application Server A   Crash / OOM / process hang                        5  6  3   90
+ 4 Application Server A   Degraded performance (slow responses, not down)   6  5  7  210
+ 5 Application Server B   Crash / OOM / process hang                        5  5  3   75
+ 6 Application Server B   Failed deployment / bad release                   6  4  5  120
+ 7 Primary Database       Node failure / crash                              9  7  4  252
+ 8 Primary Database       Data corruption / replication lag                 9  3  8  216
+ 9 Standby Database       Standby not synchronised / fails to promote       8  3  9  216
+10 Standby Database       Standby node hardware failure                     4  2  6   48
+11 Campus Network         Core switch / uplink outage                      10  4  2   80
+12 Campus Network         Congestion / DDoS during registration peak        7  5  5  175
+
+Three highest-RPN failure modes:
+  RPN 252  Primary Database - Node failure / crash
+  RPN 216  Primary Database - Data corruption / replication lag
+  RPN 216  Standby Database - Standby not synchronised / fails to promote
+
+========================================================================
+PART D - FAULT TREE ANALYSIS
+========================================================================
+Basic event probabilities q = 1 - R:
+  Load Balancer          0.0050
+  Application Server A   0.0300
+  Application Server B   0.0300
+  Primary Database       0.0200
+  Standby Database       0.0100
+  Campus Network         0.0050
+
+G1 Application subsystem unavailable (AND): 0.03 x 0.03 = 0.000900
+G2 Database subsystem unavailable (AND)   : 0.02 x 0.01 = 0.000200
+TOP Complete service unavailable (OR)     : 1 - (1-0.005)(1-0.005)(1-0.000900)(1-0.000200) = 0.011064
+Rare-event approximation (sum)            : 0.011100
+Consistency with RBD: 1 - R_sys = 0.011064  ->  OK
+Minimal cut sets: {LB}, {Network}, {AppA, AppB}, {PrimaryDB, StandbyDB}
+Importance (share of TOP probability, rare-event):
+  Load Balancer            0.005000  ( 45.0 %)
+  Campus Network           0.005000  ( 45.0 %)
+  App A AND App B          0.000900  (  8.1 %)
+  Primary AND Standby DB   0.000200  (  1.8 %)
+
+========================================================================
+EXPORT
+========================================================================
+Saved reliability_calculations.xlsx
+Saved rbd_diagram.png
+Saved fta_diagram.png
+Saved downtime_by_component.png
+Saved failure_timeline.png
+Saved results.json
