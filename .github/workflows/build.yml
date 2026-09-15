@@ -1,0 +1,30 @@
+name: Reproduce calculations
+
+on:
+  push:
+    branches: [main]
+    paths: ["reliability_analysis.py", ".github/workflows/build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run reliability analysis (Parts A-D, workbook, diagrams)
+        run: |
+          pip install matplotlib openpyxl
+          python reliability_analysis.py | tee run_log.txt
+      - name: Commit generated artifacts
+        run: |
+          git config user.name "Zhumabayev Magzhan"
+          git config user.email "magzhan200508@gmail.com"
+          git add run_log.txt results.json reliability_calculations.xlsx *.png
+          git commit -m "ci: regenerate workbook, diagrams, log and results" || echo "nothing to commit"
+          git push
