@@ -12,16 +12,14 @@ Synthetic AITU student-portal reliability analysis: availability metrics, Reliab
 | `reliability_calculations.xlsx` | Excel workbook with live formulas (sheets PartA_Metrics, PartB_RBD, PartC_FMEA, PartD_FTA) |
 | `run_log.txt` | Console output of the script (intermediate calculations) |
 | `results.json` | Machine-readable results used to build the report |
-| `build_report.js` | Generates the Word report (`Assignment1_Reliability_Report_Zhumabayev_255408.docx`) from `results.json` and the figures |
-| `.github/workflows/build.yml` | GitHub Actions workflow that re-runs the script and rebuilds all artifacts on every push (reproducibility evidence) |
 | `rbd_diagram.png`, `fta_diagram.png` | RBD and FTA diagrams |
 | `downtime_by_component.png`, `failure_timeline.png` | Supporting figures for Part A |
+| `.github/workflows/build.yml` | GitHub Actions workflow that re-runs the script on every push and commits the regenerated artifacts (reproducibility evidence — see the Actions tab) |
 
 ## Run
 ```bash
 pip install matplotlib openpyxl
 python reliability_analysis.py      # -> xlsx, png, run_log.txt, results.json
-npm install docx@9 && node build_report.js   # -> .docx report
 ```
 
 ## Key results
